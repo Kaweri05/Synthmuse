@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Model artifacts (large files — track via Git LFS or release assets instead)
+*.h5
+*.keras
+*.pkl
+
+# Generated output
+outputs/*
+!outputs/.gitkeep
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
