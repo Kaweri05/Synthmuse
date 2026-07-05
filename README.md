@@ -6,7 +6,7 @@ downloadable composition. Built on an LSTM generative core (TensorFlow /
 Keras + music21) and wrapped in a Streamlit studio interface with a
 persistent track library.
 
-🔗 **Live demo:** _[add your deployed URL here once deployed — see Deployment section below]_
+🔗 **Live demo:** [huggingface.co/spaces/cleve05/Synthmuse](https://huggingface.co/spaces/cleve05/Synthmuse)
 
 ---
 
@@ -122,11 +122,11 @@ See [`structure.txt`](structure.txt) for the full annotated folder tree.
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Installation (run it locally)
 
 ```bash
-git clone https://github.com/Kaweri05/SynthMuse.git
-cd SynthMuse
+git clone https://github.com/Kaweri05/Synthmuse.git
+cd Synthmuse
 python -m venv venv
 source venv/Scripts/activate      # Windows Git Bash. Use venv/bin/activate on macOS/Linux
 pip install -r requirements.txt
@@ -191,57 +191,45 @@ version mismatches, Windows DLL blocks, slow generation, etc.).
 
 ## 🚀 Deployment
 
-### ⚠️ Important: Vercel is not a good fit for this project
+**This project is currently deployed on [Hugging Face Spaces](https://huggingface.co/spaces/cleve05/Synthmuse)**, running as a Docker-based Streamlit Space with the trained model included directly in the repo.
 
-If you're planning to deploy SynthMuse on **Vercel**, know this upfront:
-**it will very likely fail to deploy**, for several concrete reasons:
+### Redeploying / updating the live Space
 
-1. **Vercel serverless functions have a hard size limit** (250 MB
-   uncompressed for the function bundle). TensorFlow alone is well over
-   that on its own — a full `tensorflow` install is typically
-   400–700+ MB. Your deployment will fail at the build/upload step
-   before your code even runs.
-2. **Vercel is built for Next.js / frontend + lightweight serverless
-   APIs**, not long-running Python web apps like Streamlit. Streamlit
-   needs a persistent server process (WebSocket connection for live
-   reruns) — that model doesn't fit Vercel's request/response serverless
-   execution at all.
-3. **Cold-start + execution time limits.** Even if you shrank the
-   dependencies enough to deploy, Vercel functions time out (10s on the
-   free Hobby plan, up to 60s on Pro) — loading a Keras model and
-   running LSTM inference will frequently exceed that.
+The Space is a separate git repository from this GitHub repo. To push updates to it:
 
-**If you see errors like these, this is why:**
-```
-Error: A Serverless Function has exceeded the unzipped maximum size of 250 MB
-```
-```
-Error: This Serverless Function has timed out.
+```bash
+git clone https://huggingface.co/spaces/cleve05/Synthmuse hf-synthmuse
+cd hf-synthmuse
+# copy over updated app.py / src/ / models/ / data/ / .streamlit/ / requirements.txt
+git add .
+git commit -m "Update deployed app"
+git push
 ```
 
-### ✅ Platforms that actually work for this project
+The Space's `README.md` needs this YAML header at the top for Hugging Face to build it correctly:
+```yaml
+---
+title: SynthMuse
+emoji: 🎵
+colorFrom: purple
+colorTo: indigo
+sdk: docker
+app_port: 8501
+pinned: false
+license: mit
+---
+```
 
-| Platform | Why it fits |
-|---|---|
-| **[Streamlit Community Cloud](https://streamlit.io/cloud)** | Built specifically for Streamlit apps, free tier, reads `requirements.txt` directly, no size limit issue like Vercel's. Easiest option — just connect your GitHub repo. |
-| **[Hugging Face Spaces](https://huggingface.co/spaces)** (Streamlit SDK) | Free tier, designed for ML demos, handles large model files well (can also use Git LFS for `.h5` files). |
-| **[Render](https://render.com/)** | Deploys as a persistent web service (not serverless), no 250 MB function limit, supports long-running Python processes. |
-| **[Railway](https://railway.app/)** | Similar to Render — container-based, persistent process, good for TensorFlow apps. |
+### Note on other platforms
 
-**Recommended: Streamlit Community Cloud.** Steps:
-1. Push this repo to GitHub (public or with Streamlit Cloud's GitHub access).
-2. Go to share.streamlit.io → "New app" → select your repo, branch, and `app.py` as the entry point.
-3. Since `models/*.h5`/`*.pkl` are gitignored by default, either remove them from `.gitignore` for this repo (if the files aren't too large for GitHub, <100 MB) or use **Git LFS** for the model file.
-4. Deploy — Streamlit Cloud installs everything from `requirements.txt` automatically.
-
-Once deployed, update the **Live demo** link at the top of this README.
-
-### If you must use Vercel anyway
-
-The only realistic path is splitting the project in two:
-- Host the **Streamlit/TensorFlow app** on one of the platforms above (Render/Hugging Face/Streamlit Cloud) as the actual inference backend.
-- Use Vercel only for a **separate lightweight frontend** (e.g. a Next.js landing page) that calls your hosted app via an API or iframe.
-Trying to run TensorFlow directly inside a Vercel serverless function is not a workaround that reliably works at this dependency size — plan for a different host for the ML part.
+TensorFlow-based Streamlit apps like this one need a platform that runs a
+**persistent server process** (not serverless functions with strict size/
+timeout limits). Hugging Face Spaces, [Render](https://render.com/), and
+[Railway](https://railway.app/) all work well for this. Serverless
+platforms built primarily for frontend/lightweight APIs (e.g. Vercel) are
+not a good fit — TensorFlow alone typically exceeds their function size
+limits (e.g. Vercel's 250 MB cap) and inference time can exceed their
+execution timeouts.
 
 ---
 
@@ -251,6 +239,7 @@ Trying to run TensorFlow directly inside a Vercel serverless function is not a w
 - **Deep Learning:** TensorFlow / Keras (stacked LSTM)
 - **Music parsing/rendering:** music21, pretty_midi
 - **UI:** Streamlit
+- **Deployment:** Hugging Face Spaces (Docker)
 - **Visualization:** Plotly (interactive piano roll)
 
 ---
@@ -270,7 +259,7 @@ Trying to run TensorFlow directly inside a Vercel serverless function is not a w
 - Real-time streaming generation (jam-along mode)
 - Evaluation metrics dashboard (perplexity, note-density comparisons vs. training corpus)
 - Transformer-based generation as an alternative to the LSTM, with a side-by-side comparison
-- Containerized deployment (Dockerfile) for fully reproducible environments
+- GPU-backed hardware tier on Hugging Face for faster generation
 
 ---
 
