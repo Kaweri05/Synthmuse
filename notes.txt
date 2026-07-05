@@ -1,0 +1,106 @@
+SynthMuse — Developer Notes
+============================
+
+This file collects practical notes, commands, and fixes discovered while
+building and running this project locally on Windows. Keep it updated as
+you hit (and solve) new issues.
+
+--------------------------------------------------------------------------
+1. LOCAL SETUP (Windows / Git Bash)
+--------------------------------------------------------------------------
+
+Create + activate venv:
+    python -m venv venv
+    source venv/Scripts/activate
+
+Install dependencies:
+    pip install -r requirements.txt
+
+Confirm you're using the venv's Python (not the global one):
+    which python
+    which streamlit
+    # both should point inside venv/Scripts/, not AppData\Local\Programs\Python
+
+Run the app:
+    streamlit run app.py
+
+Train a model from MIDI files in data/midi_samples/:
+    python -m src.train --epochs 30 --batch-size 64
+
+--------------------------------------------------------------------------
+2. KNOWN ISSUES + FIXES
+--------------------------------------------------------------------------
+
+Issue: ImportError: DLL load failed ... "An Application Control policy
+       has blocked this file"
+Cause: Windows Smart App Control / a managed-device policy blocking
+       TensorFlow's compiled .dll/.pyd files. More likely to trigger
+       inside a OneDrive-synced folder.
+Fix:   Move the project OUTSIDE OneDrive (e.g. C:\Projects\SynthMuse)
+       and rebuild the venv there. If it still happens, check
+       Start > "Smart App Control" — if stuck "On", a workaround is
+       running inside WSL2 instead of native Windows Python.
+
+Issue: ValueError: Unrecognized keyword arguments passed to Dense:
+       {'quantization_config': None}   (or similar Keras 3 config keys)
+Cause: The saved .h5 model was written by a different Keras major
+       version than the one currently installed.
+Fix:   Easiest reliable fix — retrain in your CURRENT environment:
+           python -m src.train --epochs 30 --batch-size 64
+       This guarantees the saved format matches your installed Keras.
+
+Issue: pip dependency conflicts after installing tf_keras
+       (ml-dtypes / protobuf / tensorflow version mismatches)
+Fix:   Uninstall and pin explicitly:
+           pip uninstall tensorflow tensorflow-intel tf_keras -y
+           pip install tensorflow==2.16.2 tf_keras==2.16.0
+       Then verify:
+           pip check
+
+Issue: [train] Vocabulary size: 0  (ValueError: zero-size array ...)
+Cause: extract_notes_from_midi() only read the first instrument part
+       (parts.parts[0]), but many MIDI files spread notes across
+       several parts, leaving part 0 empty.
+Fix:   Already patched in src/data_preprocessing.py — it now loops
+       over ALL parts:
+           for part in parts.parts:
+               elements.extend(part.recurse().notes)
+
+Issue: Generation is very slow (one note at a time)
+Cause: Calling model.predict() per note has high per-call overhead.
+Fix:   Use the model as a callable instead, inside generator.py:
+           probabilities = self.model(prediction_input, training=False).numpy()[0]
+       instead of:
+           probabilities = self.model.predict(prediction_input, verbose=0)[0]
+
+Issue: `python3` not found in Git Bash on Windows
+Fix:   Use `python` instead of `python3` — the python3 alias isn't
+       set up by default on Windows and redirects to the Microsoft
+       Store.
+
+Issue: Pasting multi-line code via `cat << EOF` in Git Bash gets
+       garbled / truncated
+Fix:   Avoid large heredoc pastes in MINGW/Git Bash. Prefer downloading
+       the corrected file directly and copying it in via `cp`, or use
+       a short Python one-liner to write the file instead.
+
+--------------------------------------------------------------------------
+3. IMPROVING MODEL QUALITY
+--------------------------------------------------------------------------
+
+- Add more .mid files to data/midi_samples/ — one file gives a small,
+  repetitive vocabulary (that's why "Vocabulary size: 52" is small).
+- Increase --epochs once you have more data (loss was still decreasing
+  at epoch 30 in early training runs — not yet converged).
+- Consider data augmentation: transpose the whole corpus up/down a few
+  semitones to multiply effective training data from a small dataset.
+
+--------------------------------------------------------------------------
+4. THINGS THIS PROJECT DELIBERATELY DOES NOT DO (yet)
+--------------------------------------------------------------------------
+
+- No singing voice / lyrics / vocal synthesis — this is an instrumental
+  MIDI note-sequence generator only. Adding vocals would require a
+  separate singing-voice-synthesis model and a paired lyrics+audio
+  dataset — a different project, not an extension of this one.
+- No GPU acceleration configured — runs on CPU (tensorflow-intel).

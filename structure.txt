@@ -1,0 +1,47 @@
+SynthMuse/
+│
+├── app.py                        # Main Streamlit application (entry point)
+├── requirements.txt              # Python dependencies
+├── runtime.txt                   # Python version pin (for cloud deployment)
+├── README.md                     # Project documentation (this repo's main doc)
+├── MIGRATION.md                  # Notes for migrating from the old Music_Gener_AI repo
+├── LICENSE                       # MIT License
+├── .gitignore                    # Files/folders excluded from git
+│
+├── .streamlit/
+│   └── config.toml               # Streamlit theme (purple UI palette)
+│
+├── src/                          # Core application package
+│   ├── __init__.py
+│   ├── config.py                 # Central paths, hyperparameters, emotion profiles
+│   ├── data_preprocessing.py     # MIDI -> note corpus -> training sequences
+│   ├── model.py                  # LSTM architecture definition
+│   ├── train.py                  # Training entry point (python -m src.train)
+│   ├── generator.py              # Core sampling / seeding / blending / MIDI rendering
+│   ├── emotion_engine.py         # Mood <-> musical parameter mapping + text sentiment
+│   ├── continuation.py           # "Finish My Melody" feature logic
+│   ├── style_fusion.py           # "Music DNA Mixer" feature logic
+│   ├── history.py                # "My Library" persistent track history (JSON-backed)
+│   ├── visualizer.py             # Plotly piano-roll rendering
+│   ├── audio_render.py           # MIDI -> WAV (FluidSynth, or pure-Python sine fallback)
+│   └── sheet_music.py            # MusicXML sheet-music export
+│
+├── models/                       # Trained model artifacts (gitignored, kept locally)
+│   ├── music_model.h5            # Trained LSTM weights
+│   ├── notes.pkl                 # Flat note corpus used for training
+│   └── note_mappings.pkl         # note_to_int / int_to_note vocabulary mapping
+│
+├── data/
+│   └── midi_samples/              # Raw .mid training files go here
+│       └── (your .mid files)
+│
+├── outputs/                       # Runtime-generated content (gitignored)
+│   └── history/                   # "My Library" saved tracks
+│       ├── index.json             # Metadata index of every generated track
+│       └── files/                 # Per-track MIDI + WAV files
+│
+├── notebooks/
+│   └── README.md                  # Notes on where to keep the training/exploration notebook
+│
+└── assets/
+    └── screenshots/                # App screenshots for documentation
